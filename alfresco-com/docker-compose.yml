@@ -60,7 +60,8 @@ services:
   share:
     #image: alfresco-share:latest #chatcharinx/alfresco-share:7.4.1
     image: docker.io/alfresco/alfresco-share:7.4.1
-    #volumes:
+    volumes:
+       - ./share-config-custom.xml:/usr/local/tomcat/shared/classes/alfresco/web-extension/share-config-custom.xml
     #  - ./alfresco-global.properties:/usr/local/tomcat/shared/classes/alfresco-global.properties
     #  - ./fix/share:/usr/local/tomcat/webapps/share
     mem_limit: 1g
