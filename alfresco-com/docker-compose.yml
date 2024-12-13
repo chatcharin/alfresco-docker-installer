@@ -69,6 +69,7 @@ services:
     environment:
       REPO_HOST: "alfresco"
       REPO_PORT: "8080"
+      CSRF_FILTER_REFERER: "https://localhost/.*|https://jubilant-happiness-pg4wvjjjw7f6gpg-8081.app.github.dev/.*"
       JAVA_OPTS: >-
         -XX:MinRAMPercentage=50
         -XX:MaxRAMPercentage=80
@@ -78,6 +79,7 @@ services:
         -Dalfresco.protocol=http
         -Dhttp.secured.session=true
         -Dcookies.sameSite=none
+        -Dcsrf.filter.enabled=false
   postgres:
     image: postgres:14
     mem_limit: 512m
