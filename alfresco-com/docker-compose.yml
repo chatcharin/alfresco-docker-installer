@@ -64,6 +64,8 @@ services:
     #  - ./alfresco-global.properties:/usr/local/tomcat/shared/classes/alfresco-global.properties
     #  - ./fix/share:/usr/local/tomcat/webapps/share
     mem_limit: 1g
+    ports:
+      - 8081:8080
     environment:
       REPO_HOST: "alfresco"
       REPO_PORT: "8080"
@@ -129,6 +131,10 @@ services:
     #image: chatcharinx/alfresco-acs-nginx:3.4.3
     image: alfresco/alfresco-acs-nginx:3.4.2
     mem_limit: 128m
+    volumes:
+       - ./nginx.conf:/etc/nginx/nginx.conf
+      #- ./alfresco-global.properties:/usr/local/tomcat/shared/classes/alfresco-global.properties
+      #- /.passwd-s3fs:/root/.passwd-s3fs
     environment:
       DISABLE_PROMETHEUS: "true"
       DISABLE_SYNCSERVICE: "true"
