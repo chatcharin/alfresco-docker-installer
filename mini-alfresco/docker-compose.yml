@@ -1,3 +1,6 @@
+# Using version 2 as 3 does not support resource constraint options (cpu_*, mem_* limits) for non swarm mode in Compose
+version: "2"
+
 services:
     alfresco:
         build:
@@ -5,13 +8,8 @@ services:
           args:
             ALFRESCO_TAG: ${ALFRESCO_CE_TAG}
             DB: postgres
-            SOLR_COMMS: https 
-            TRUSTSTORE_TYPE: JCEKS
-            TRUSTSTORE_PASS: truststore
-            KEYSTORE_TYPE: JCEKS
-            KEYSTORE_PASS: keystore
-            CERT_ALIAS: ssl.repo 
-        mem_limit: 3264m
+            SOLR_COMMS: secret 
+        mem_limit: 7488m
         depends_on: 
           postgres:
             condition: service_healthy
@@ -26,14 +24,6 @@ services:
                 -Dmetadata-keystore.aliases=metadata
                 -Dmetadata-keystore.metadata.password=oKIWzVdEdA
                 -Dmetadata-keystore.metadata.algorithm=DESede
-                -Dssl-keystore.password=keystore
-                -Dssl-keystore.aliases=ssl-alfresco-ca,ssl-repo
-                -Dssl-keystore.ssl-alfresco-ca.password=keystore
-                -Dssl-keystore.ssl-repo.password=keystore
-                -Dssl-truststore.password=truststore
-                -Dssl-truststore.aliases=alfresco-ca,ssl-repo-client
-                -Dssl-truststore.alfresco-ca.password=truststore
-                -Dssl-truststore.ssl-repo-client.password=truststore
                 "
             JAVA_OPTS : '
                 -Ddb.username=alfresco
@@ -45,12 +35,10 @@ services:
                 -Dsolr.host=solr6
                 -Dsolr.port=8983
                 -Dsolr.port.ssl=8983
-                -Dsolr.secureComms=https
+                -Dsolr.secureComms=secret
                 -Dsolr.baseUrl=/solr
-                -Dindex.subsystem.name=solr6 
-                -Ddir.keystore=/usr/local/tomcat/keystore
-                -Dalfresco.encryption.ssl.keystore.type=JCEKS
-                -Dalfresco.encryption.ssl.truststore.type=JCEKS 
+                -Dindex.subsystem.name=solr6
+                -Dsolr.sharedSecret=8br5rax5mtm  
                 -Dalfresco.host=${SERVER_NAME}
                 -Dalfresco.port=8080
                 -Dapi-explorer.url=http://${SERVER_NAME}:8080/api-explorer
@@ -75,12 +63,7 @@ services:
                 -Dauthentication.protection.enabled=false
                 -XX:+UseG1GC -XX:+UseStringDeduplication
                 -Dgoogledocs.enabled=true  
-                -Ddev.email.not.sent=true 
-                -Dauthentication.chain=alfinst:alfrescoNtlm,ldap1:ldap
-                -Dldap.authentication.active=true
-                -Dldap.authentication.java.naming.provider.url=ldap://openldap:389
-                -Dldap.authentication.userNameFormat=uid=%s,dc=keensoft,dc=es
-                -Dldap.synchronization.active=false  
+                -Ddev.email.not.sent=true  
                 -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80
             '
         healthcheck:
@@ -93,10 +76,9 @@ services:
           timeout: 3s
           retries: 3
           start_period: 1m
-        volumes:  
-            - alf-repo-data:/usr/local/tomcat/alf_data
-            - alf-repo-logs:/usr/local/tomcat/logs   
-            - ./keystores/alfresco:/usr/local/tomcat/keystore 
+        volumes: 
+            - ./data/alf-repo-data:/usr/local/tomcat/alf_data
+            - ./logs/alfresco:/usr/local/tomcat/logs    
         
 
     transform-core-aio:
@@ -126,7 +108,7 @@ services:
           args:
             SHARE_TAG: ${SHARE_TAG}
             SERVER_NAME: ${SERVER_NAME}
-        mem_limit: 816m
+        mem_limit: 1872m
         environment:
             REPO_HOST: "alfresco"
             REPO_PORT: "8080"
@@ -140,13 +122,13 @@ services:
         depends_on:
           alfresco:
             condition: service_healthy
-        volumes:  
-            - alf-share-logs:/usr/local/tomcat/logs 
+        volumes: 
+            - ./logs/share:/usr/local/tomcat/logs  
 
     
     postgres:
         image: postgres:${POSTGRES_TAG}
-        mem_limit: 816m
+        mem_limit: 1872m
         environment:
             - POSTGRES_PASSWORD=alfresco
             - POSTGRES_USER=alfresco
@@ -165,9 +147,9 @@ services:
           retries: 5
         ports:
             - 5432:5432
-        volumes:  
-            - postgres-data:/var/lib/postgresql/data
-            - postgres-logs:/var/log/postgresql 
+        volumes: 
+            - ./data/postgres-data:/var/lib/postgresql/data
+            - ./logs/postgres:/var/log/postgresql  
      
 
     solr6:
@@ -177,56 +159,29 @@ services:
             SEARCH_TAG: ${SEARCH_CE_TAG}
             SOLR_HOSTNAME: solr6
             ALFRESCO_HOSTNAME: alfresco
-            ALFRESCO_COMMS: https 
-            TRUSTSTORE_TYPE: JCEKS
-            KEYSTORE_TYPE: JCEKS 
+            ALFRESCO_COMMS: secret 
             CROSS_LOCALE: "false"
             DISABLE_CONTENT_INDEXING: "true"
-        mem_limit: 1632m
+        mem_limit: 3744m
         environment:
             SOLR_JAVA_MEM: "-XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80"
             #Solr needs to know how to register itself with Alfresco
             SOLR_ALFRESCO_HOST: "alfresco"
-            SOLR_ALFRESCO_PORT:  "8443" 
+            SOLR_ALFRESCO_PORT:  "8080" 
             #Alfresco needs to know how to call solr
             SOLR_SOLR_HOST: "solr6"
             SOLR_SOLR_PORT: "8983"
             #Create the default alfresco and archive cores
             SOLR_CREATE_ALFRESCO_DEFAULTS: "alfresco,archive" 
-            SOLR_SSL_TRUST_STORE: "/opt/alfresco-search-services/keystore/ssl-repo-client.truststore"
-            SOLR_SSL_TRUST_STORE_PASSWORD: "truststore"
-            SOLR_SSL_TRUST_STORE_TYPE: "JCEKS"
-            SOLR_SSL_KEY_STORE: "/opt/alfresco-search-services/keystore/ssl-repo-client.keystore"
-            SOLR_SSL_KEY_STORE_PASSWORD: "keystore"
-            SOLR_SSL_KEY_STORE_TYPE: "JCEKS"
-            SOLR_SSL_NEED_CLIENT_AUTH: "true"
-            JAVA_TOOL_OPTIONS: "
-                -Dsolr.jetty.truststore.password=truststore
-                -Dsolr.jetty.keystore.password=keystore
-                -Dssl-keystore.password=keystore
-                -Dssl-keystore.aliases=ssl-alfresco-ca,ssl-repo-client
-                -Dssl-keystore.ssl-alfresco-ca.password=keystore
-                -Dssl-keystore.ssl-repo-client.password=keystore
-                -Dssl-truststore.password=truststore
-                -Dssl-truststore.aliases=ssl-alfresco-ca,ssl-repo,ssl-repo-client
-                -Dssl-truststore.ssl-alfresco-ca.password=truststore
-                -Dssl-truststore.ssl-repo.password=truststore
-                -Dssl-truststore.ssl-repo-client.password=truststore
-            " 
             SOLR_OPTS: "
-                -XX:-UseLargePages 
-                -Dsolr.ssl.checkPeerName=false
-                -Dsolr.allow.unsafe.resourceloading=true 
+                -XX:-UseLargePages
+                -Dalfresco.secureComms.secret=8br5rax5mtm 
             "
         depends_on:
           alfresco:
             condition: service_healthy
-        volumes:  
-            - solr-data:/opt/alfresco-search-services/data  
-            - ./keystores/solr:/opt/alfresco-search-services/keystore 
-        
-        ports:
-            - 8983:8983
+        volumes: 
+            - ./data/solr-data:/opt/alfresco-search-services/data   
         
 
     
@@ -260,32 +215,6 @@ services:
     
 
     
-    openldap:
-        image: osixia/openldap:1.4.0
-        mem_limit: 128m
-        container_name: openldap
-        environment:
-          LDAP_DOMAIN: "alfresco.org"
-          LDAP_BASE_DN: "dc=alfresco,dc=org"
-          LDAP_ADMIN_PASSWORD: "admin"
-        volumes:
-            - ./data/slapd/database:/var/lib/ldap
-            - ./data/slapd/config:/etc/ldap/slapd.d
-
-    phpldapadmin:
-        image: osixia/phpldapadmin
-        mem_limit: 128m
-        container_name: phpldapadmin
-        environment:
-          PHPLDAPADMIN_LDAP_HOSTS: "openldap"
-          PHPLDAPADMIN_HTTPS=false:
-        links:
-            - openldap
-        depends_on:
-            - openldap
-        ports:
-            - 8088:80
-    
 
     
 
@@ -301,13 +230,4 @@ services:
             "
     
 
-
-volumes:
-    alf-repo-data:
-    activemq-data:
-    alf-repo-logs: 
-    alf-share-logs: 
-    postgres-data:
-    postgres-logs:  
-    solr-data: 
 
