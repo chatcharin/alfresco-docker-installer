@@ -64,9 +64,9 @@ services:
                 -Ddev.email.not.sent=true  
                 -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80
             '
-        volumes: 
-            - ./data/alf-repo-data:/usr/local/tomcat/alf_data
-            - ./logs/alfresco:/usr/local/tomcat/logs    
+        # volumes: 
+        #     - ./data/alf-repo-data:/usr/local/tomcat/alf_data
+        #     - ./logs/alfresco:/usr/local/tomcat/logs    
         
 
     transform-core-aio:
@@ -108,8 +108,8 @@ services:
                 -Dalfresco.protocol=http
                 -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80
                 "
-        volumes: 
-            - ./logs/share:/usr/local/tomcat/logs  
+        # volumes: 
+            # - ./logs/share:/usr/local/tomcat/logs  
 
     
     postgres:
@@ -127,9 +127,9 @@ services:
               -c log_directory=/var/log/postgresql"
         ports:
             - 5432:5432
-        volumes: 
-            - ./data/postgres-data:/var/lib/postgresql/data
-            - ./logs/postgres:/var/log/postgresql  
+        # volumes: 
+        #     - ./data/postgres-data:/var/lib/postgresql/data
+        #     - ./logs/postgres:/var/log/postgresql  
      
 
     solr6:
@@ -157,8 +157,8 @@ services:
                 -XX:-UseLargePages
                 -Dalfresco.secureComms.secret=qk00vhwphdd 
             "
-        volumes: 
-            - ./data/solr-data:/opt/alfresco-search-services/data   
+        # volumes: 
+            # - ./data/solr-data:/opt/alfresco-search-services/data   
         
 
     
